@@ -6,7 +6,7 @@ namespace dotnetMauiUIDesginer
     public partial class Canvas : Form
     {
         private Panel canvasPanel;
-
+        private ContextMenuStrip canvasContextMenu;
         public Canvas()
         {
             InitializeComponent();
@@ -22,8 +22,10 @@ namespace dotnetMauiUIDesginer
             canvasPanel.DragDrop += CanvasPanel_DragDrop;
 
             Controls.Add(canvasPanel);
+            InitializeContextMenu();
         }
 
+        // Drag and drop Functions //
         private void CanvasPanel_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(typeof(string)))
@@ -53,6 +55,8 @@ namespace dotnetMauiUIDesginer
                 newControl.Location = location;
                 newControl.AutoSize = true;
                 EnableDragMove(newControl);
+
+                newControl.ContextMenuStrip = canvasContextMenu;
                 canvasPanel.Controls.Add(newControl);
             }
         }
@@ -78,6 +82,33 @@ namespace dotnetMauiUIDesginer
             };
 
             control.MouseUp += (s, e) => dragging = false;
+        }
+        // Drag and drop Functions //
+
+        // Context Menu Functions //
+        private void InitializeContextMenu()
+        {
+            canvasContextMenu = new ContextMenuStrip();
+            canvasContextMenu.Items.Add("Delete", null, DeleteMenuItem_Click);
+            canvasContextMenu.Items.Add("Properties", null, PropertiesMenuItem_Click);
+        }
+
+        private void DeleteMenuItem_Click(object sender, EventArgs e)
+        {
+            if (canvasContextMenu.SourceControl != null)
+            {
+                canvasPanel.Controls.Remove(canvasContextMenu.SourceControl);
+                canvasContextMenu.SourceControl.Dispose();
+            }
+        }
+
+        private void PropertiesMenuItem_Click(object sender, EventArgs e)
+        {
+            if (canvasContextMenu.SourceControl != null)
+            {
+                Control selected = canvasContextMenu.SourceControl;
+                MessageBox.Show($"Properties for {selected.GetType().Name}:\nLocation: {selected.Location}");
+            }
         }
     }
 }

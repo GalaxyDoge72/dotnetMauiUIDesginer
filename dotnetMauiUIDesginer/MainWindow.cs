@@ -5,11 +5,6 @@ namespace dotnetMauiUIDesginer
         public MainWindow()
         {
             InitializeComponent();
-            toolboxForm toolbox = new toolboxForm();
-            toolbox.Show();
-
-            Canvas canvas = new Canvas();
-            canvas.Show();
         }
 
         public Point getMouseRelativeToApp()
