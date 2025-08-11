@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace dotnetMauiUIDesginer
@@ -6,7 +7,11 @@ namespace dotnetMauiUIDesginer
     public partial class Canvas : Form
     {
         private Panel canvasPanel;
-        private ContextMenuStrip canvasContextMenu;
+        public event Action<Control>? ControlSelectedForProperties;
+
+        private ContextMenuStrip controlContextMenu;
+        private Control? contextMenuTargetControl;
+
         public Canvas()
         {
             InitializeComponent();
@@ -17,33 +22,39 @@ namespace dotnetMauiUIDesginer
                 BackColor = Color.White,
                 AllowDrop = true
             };
-
-            canvasPanel.DragEnter += CanvasPanel_DragEnter;
-            canvasPanel.DragDrop += CanvasPanel_DragDrop;
-
             Controls.Add(canvasPanel);
-            InitializeContextMenu();
+
+            // Drag & drop events
+            canvasPanel.DragEnter += canvasPanel_DragEnter;
+            canvasPanel.DragDrop += canvasPanel_DragDrop;
+
+            // Setup context menu
+            controlContextMenu = new ContextMenuStrip();
+
+            var editPropertiesItem = new ToolStripMenuItem("Edit Properties");
+            editPropertiesItem.Click += EditPropertiesItem_Click;
+            controlContextMenu.Items.Add(editPropertiesItem);
+
+            var deleteItem = new ToolStripMenuItem("Delete");
+            deleteItem.Click += DeleteItem_Click;
+            controlContextMenu.Items.Add(deleteItem);
         }
 
-        // Drag and drop Functions //
-        private void CanvasPanel_DragEnter(object sender, DragEventArgs e)
+        private void canvasPanel_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(typeof(string)))
-            {
                 e.Effect = DragDropEffects.Copy;
-            }
         }
 
-        private void CanvasPanel_DragDrop(object sender, DragEventArgs e)
+        private void canvasPanel_DragDrop(object sender, DragEventArgs e)
         {
             string controlType = (string)e.Data.GetData(typeof(string));
-            Point clientPoint = canvasPanel.PointToClient(new Point(e.X, e.Y));
-            AddControlToCanvas(controlType, clientPoint);
+            addControlToCanvas(controlType, e.X, e.Y);
         }
 
-        private void AddControlToCanvas(string controlType, Point location)
+        private void addControlToCanvas(string controlType, int screenX, int screenY)
         {
-            Control newControl = controlType switch
+            Control? newControl = controlType switch
             {
                 "Button" => new Button { Text = "Button" },
                 "Label" => new Label { Text = "Label" },
@@ -52,24 +63,30 @@ namespace dotnetMauiUIDesginer
 
             if (newControl != null)
             {
-                newControl.Location = location;
+                Point clientPoint = canvasPanel.PointToClient(new Point(screenX, screenY));
+                newControl.Location = clientPoint;
                 newControl.AutoSize = true;
-                EnableDragMove(newControl);
 
-                newControl.ContextMenuStrip = canvasContextMenu;
+                enableDragMove(newControl);
+                AttachSelectionHandler(newControl);
+                AttachContextMenu(newControl);
+
                 canvasPanel.Controls.Add(newControl);
             }
         }
 
-        private void EnableDragMove(Control control)
+        private void enableDragMove(Control control)
         {
             bool dragging = false;
             Point dragStart = Point.Empty;
 
             control.MouseDown += (s, e) =>
             {
-                dragging = true;
-                dragStart = e.Location;
+                if (e.Button == MouseButtons.Left)
+                {
+                    dragging = true;
+                    dragStart = e.Location;
+                }
             };
 
             control.MouseMove += (s, e) =>
@@ -83,31 +100,50 @@ namespace dotnetMauiUIDesginer
 
             control.MouseUp += (s, e) => dragging = false;
         }
-        // Drag and drop Functions //
 
-        // Context Menu Functions //
-        private void InitializeContextMenu()
+        private void AttachSelectionHandler(Control ctrl)
         {
-            canvasContextMenu = new ContextMenuStrip();
-            canvasContextMenu.Items.Add("Delete", null, DeleteMenuItem_Click);
-            canvasContextMenu.Items.Add("Properties", null, PropertiesMenuItem_Click);
+            ctrl.Click += (s, e) =>
+            {
+                // Only left-click triggers selection event
+                if (e is MouseEventArgs me && me.Button == MouseButtons.Left)
+                {
+                    ControlSelectedForProperties?.Invoke(ctrl);
+                }
+            };
         }
 
-        private void DeleteMenuItem_Click(object sender, EventArgs e)
+        private void AttachContextMenu(Control ctrl)
         {
-            if (canvasContextMenu.SourceControl != null)
+            ctrl.MouseUp += (s, e) =>
             {
-                canvasPanel.Controls.Remove(canvasContextMenu.SourceControl);
-                canvasContextMenu.SourceControl.Dispose();
+                if (e is MouseEventArgs me && me.Button == MouseButtons.Right)
+                {
+                    contextMenuTargetControl = ctrl;
+                    controlContextMenu.Show(ctrl, me.Location);
+                }
+            };
+        }
+
+        private void EditPropertiesItem_Click(object? sender, EventArgs e)
+        {
+            if (contextMenuTargetControl != null)
+            {
+                ControlSelectedForProperties?.Invoke(contextMenuTargetControl);
             }
         }
 
-        private void PropertiesMenuItem_Click(object sender, EventArgs e)
+        private void DeleteItem_Click(object? sender, EventArgs e)
         {
-            if (canvasContextMenu.SourceControl != null)
+            if (contextMenuTargetControl != null)
             {
-                Control selected = canvasContextMenu.SourceControl;
-                MessageBox.Show($"Properties for {selected.GetType().Name}:\nLocation: {selected.Location}");
+                // Remove from parent (canvasPanel)
+                canvasPanel.Controls.Remove(contextMenuTargetControl);
+
+                // Optionally, reset selection so MainWindow knows no control is selected
+                ControlSelectedForProperties?.Invoke(null);
+
+                contextMenuTargetControl = null;
             }
         }
     }

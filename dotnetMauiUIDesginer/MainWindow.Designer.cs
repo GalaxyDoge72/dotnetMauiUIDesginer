@@ -28,55 +28,18 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            saveButton = new Button();
-            mouseLocationLabel = new Label();
-            oneMSTimer = new System.Windows.Forms.Timer(components);
             SuspendLayout();
-            // 
-            // saveButton
-            // 
-            saveButton.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            saveButton.Location = new Point(12, 12);
-            saveButton.Name = "saveButton";
-            saveButton.Size = new Size(79, 30);
-            saveButton.TabIndex = 0;
-            saveButton.Text = "Save...";
-            saveButton.UseVisualStyleBackColor = true;
-            // 
-            // mouseLocationLabel
-            // 
-            mouseLocationLabel.AutoSize = true;
-            mouseLocationLabel.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            mouseLocationLabel.Location = new Point(97, 17);
-            mouseLocationLabel.Name = "mouseLocationLabel";
-            mouseLocationLabel.Size = new Size(50, 20);
-            mouseLocationLabel.TabIndex = 1;
-            mouseLocationLabel.Text = "label1";
-            // 
-            // oneMSTimer
-            // 
-            oneMSTimer.Enabled = true;
-            oneMSTimer.Interval = 1;
-            oneMSTimer.Tick += oneMSTimer_Tick;
             // 
             // MainWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(607, 388);
-            Controls.Add(mouseLocationLabel);
-            Controls.Add(saveButton);
+            ClientSize = new Size(736, 472);
             Name = "MainWindow";
             Text = "Form1";
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
-
-        private Button saveButton;
-        private Label mouseLocationLabel;
-        private System.Windows.Forms.Timer oneMSTimer;
     }
 }

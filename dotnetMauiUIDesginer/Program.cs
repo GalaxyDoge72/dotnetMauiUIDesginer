@@ -21,8 +21,8 @@ namespace dotnetMauiUIDesginer
             int toolboxWidth = 250;
             int toolboxHeight = 200;
 
-            int mainWindowWidth = 250;
-            int mainWindowHeight = 200;
+            int mainWindowWidth = 500;
+            int mainWindowHeight = 500;
 
             canvas.StartPosition = FormStartPosition.Manual;
             canvas.Location = new Point(500, 200);
@@ -43,6 +43,11 @@ namespace dotnetMauiUIDesginer
             {
                 toolbox.Location = new Point(canvas.Left - toolboxWidth, canvas.Top);
                 mainWindow.Location = new Point(canvas.Left - mainWindowWidth, canvas.Top + toolboxHeight);
+            };
+
+            canvas.ControlSelectedForProperties += control =>
+            {
+                mainWindow.LoadControlProperties(control);
             };
 
             Application.Run(canvas);
