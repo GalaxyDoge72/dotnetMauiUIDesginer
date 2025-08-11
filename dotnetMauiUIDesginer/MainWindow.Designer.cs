@@ -37,7 +37,7 @@
             // saveButton
             // 
             saveButton.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            saveButton.Location = new Point(1383, 9);
+            saveButton.Location = new Point(12, 12);
             saveButton.Name = "saveButton";
             saveButton.Size = new Size(79, 30);
             saveButton.TabIndex = 0;
@@ -48,7 +48,7 @@
             // 
             mouseLocationLabel.AutoSize = true;
             mouseLocationLabel.Font = new Font("Segoe UI", 11.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            mouseLocationLabel.Location = new Point(1230, 14);
+            mouseLocationLabel.Location = new Point(97, 17);
             mouseLocationLabel.Name = "mouseLocationLabel";
             mouseLocationLabel.Size = new Size(50, 20);
             mouseLocationLabel.TabIndex = 1;
@@ -60,14 +60,14 @@
             oneMSTimer.Interval = 1;
             oneMSTimer.Tick += oneMSTimer_Tick;
             // 
-            // Form1
+            // MainWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1474, 724);
+            ClientSize = new Size(607, 388);
             Controls.Add(mouseLocationLabel);
             Controls.Add(saveButton);
-            Name = "Form1";
+            Name = "MainWindow";
             Text = "Form1";
             ResumeLayout(false);
             PerformLayout();

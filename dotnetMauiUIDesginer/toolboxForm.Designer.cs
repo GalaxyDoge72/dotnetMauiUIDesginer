@@ -1,6 +1,6 @@
 ﻿namespace dotnetMauiUIDesginer
 {
-    partial class Canvas
+    partial class toolboxForm
     {
         /// <summary>
         /// Required designer variable.
@@ -30,13 +30,13 @@
         {
             SuspendLayout();
             // 
-            // Canvas
+            // toolboxForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1474, 724);
-            Name = "Canvas";
-            Text = "Canvas";
+            ClientSize = new Size(800, 450);
+            Name = "toolboxForm";
+            Text = "toolboxForm";
             ResumeLayout(false);
         }
 
