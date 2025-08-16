@@ -34,7 +34,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(736, 472);
+            ClientSize = new Size(736, 472); // Overridden to 500, 500 in Program.cs
             Name = "MainWindow";
             Text = "Form1";
             ResumeLayout(false);

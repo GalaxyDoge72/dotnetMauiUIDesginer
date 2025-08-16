@@ -9,6 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="C:\Users\GalaxyDoge72\.nuget\packages\fungusware-fctb\2025.6.4.1342\contentFiles\any\net8.0-windows7.0\license.txt" />
+    <Content Remove="C:\Users\GalaxyDoge72\.nuget\packages\fungusware-fctb\2025.6.4.1342\contentFiles\any\net8.0-windows7.0\logo.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fungusware-FCTB" Version="2025.6.4.1342" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Update="toolboxForm.resx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
