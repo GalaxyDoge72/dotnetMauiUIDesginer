@@ -19,7 +19,7 @@ namespace dotnetMauiUIDesginer
         private readonly TextStyle classStyle = new TextStyle(Brushes.Purple, null, FontStyle.Regular);
         private readonly TextStyle commentStyle = new TextStyle(Brushes.Green, null, FontStyle.Italic);
         private readonly TextStyle typeStyle = new TextStyle(Brushes.Blue, null, FontStyle.Regular);
-        private readonly TextStyle conditionalStyle = new TextStyle(Brushes.Yellow, FontStyle.Regular);
+        private readonly TextStyle conditionalStyle = new TextStyle(Brushes.Yellow, null, FontStyle.Regular);
 
 
         public MainWindow()
