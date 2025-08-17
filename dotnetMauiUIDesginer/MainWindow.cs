@@ -2,7 +2,9 @@ using FastColoredTextBoxNS;
 using FastColoredTextBoxNS.Text;
 using FastColoredTextBoxNS.Types;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -12,20 +14,51 @@ namespace dotnetMauiUIDesginer
     {
         private Control? currentControl;
         private TextBox nameTextBox;
-        private Button applyButton;
         private TextBox xAxisBox;
         private FastColoredTextBox codeEditor;
+        private FastColoredTextBox xamlEditor;
+        private Canvas _canvasForm;
+        private TabControl codeTabs;
 
+        // Mapping from Buttons to their click handler names
+        private Dictionary<Button, string> buttonHandlers = new();
+
+        // XAML Formatting Styles
+        private readonly TextStyle attributeStyle = new TextStyle(Brushes.DarkRed, null, FontStyle.Regular);
+        private readonly TextStyle tagStyle = new TextStyle(Brushes.Blue, null, FontStyle.Bold);
+        private readonly TextStyle commentXAMLStyle = new TextStyle(Brushes.Green, null, FontStyle.Italic);
+
+        // C# Code Styling
         private readonly TextStyle classStyle = new TextStyle(Brushes.Purple, null, FontStyle.Regular);
         private readonly TextStyle commentStyle = new TextStyle(Brushes.Green, null, FontStyle.Italic);
         private readonly TextStyle typeStyle = new TextStyle(Brushes.Blue, null, FontStyle.Regular);
-        private readonly TextStyle conditionalStyle = new TextStyle(Brushes.Yellow, null, FontStyle.Regular);
 
-
-        public MainWindow()
+        public MainWindow(Canvas canvasForm)
         {
             InitializeComponent();
+            _canvasForm = canvasForm;
 
+            _canvasForm.ControlSelectedForProperties += ctrl =>
+            {
+                LoadControlProperties(ctrl);
+
+                if (ctrl != null)
+                    xAxisBox.Text = $"X={ctrl.Location.X}";
+                else
+                    xAxisBox.Text = string.Empty;
+
+                GenerateButtonClickHandler(ctrl);
+            };
+
+            _canvasForm.canvasChanged += () => updateXamlLayout();
+
+            SetupControls();
+            SetupEditors();
+            SetupTabs();
+        }
+
+        private void SetupControls()
+        {
             // Label for control name
             Label nameLabel = new Label
             {
@@ -36,43 +69,64 @@ namespace dotnetMauiUIDesginer
             };
             Controls.Add(nameLabel);
 
-            // TextBox for editing control name
-            nameTextBox = new TextBox
-            {
-                Location = new Point(60, 22),
-                Width = 200
-            };
+            // Name TextBox
+            nameTextBox = new TextBox { Location = new Point(60, 22), Width = 200 };
+            nameTextBox.TextChanged += NameTextBox_TextChanged;
             Controls.Add(nameTextBox);
 
-            // Apply button to set the control's name and text
-            applyButton = new Button
-            {
-                Text = "Apply",
-                Location = new Point(270, 22)
-            };
-            applyButton.Click += ApplyButton_Click;
-            Controls.Add(applyButton);
-
-            // Additional text box placeholder (adjust or remove as needed)
-            xAxisBox = new TextBox
-            {
-                Text = "",
-                Location = new Point(60, 50),
-                Width = 200
-            };
+            // X-axis TextBox
+            xAxisBox = new TextBox { Location = new Point(60, 50), Width = 200 };
             Controls.Add(xAxisBox);
 
-            // Keep label background consistent when form background changes
-            this.BackColorChanged += (s, e) =>
-            {
-                nameLabel.BackColor = this.BackColor;
-            };
+            // Keep label background consistent
+            this.BackColorChanged += (s, e) => { nameLabel.BackColor = this.BackColor; };
+        }
 
-            // Setup FastColoredTextBox editor
+        private void NameTextBox_TextChanged(object? sender, EventArgs e)
+        {
+            if (currentControl == null) return;
+
+            string newName = nameTextBox.Text.Trim();
+
+            if (!string.IsNullOrEmpty(newName) && !_canvasForm.IsControlNameDuplicateWithOther(currentControl, newName))
+            {
+                string oldName = currentControl.Name;
+                currentControl.Name = newName;
+
+                // Update button handler name if it's a button
+                if (currentControl is Button btn)
+                {
+                    UpdateButtonClickHandlerName(btn, oldName);
+                }
+
+                updateXamlLayout();
+            }
+        }
+
+        private void SetupTabs()
+        {
+            codeTabs = new TabControl
+            {
+                Location = new Point(10, 80),
+                Size = new Size(620, 500)
+            };
+            codeTabs.SelectedIndexChanged += updateXamlLayout;
+            Controls.Add(codeTabs);
+
+            TabPage codeEditorPage = new TabPage("Code Editor");
+            TabPage xamlEditorPage = new TabPage("XAML Code");
+            codeTabs.Controls.Add(codeEditorPage);
+            codeTabs.Controls.Add(xamlEditorPage);
+
+            codeEditorPage.Controls.Add(codeEditor);
+            xamlEditorPage.Controls.Add(xamlEditor);
+        }
+
+        private void SetupEditors()
+        {
             codeEditor = new FastColoredTextBox
             {
-                Location = new Point(10, 90),
-                Size = new Size(480, 300),
+                Size = new Size(610, 490),
                 Language = Language.CSharp,
                 ShowLineNumbers = true,
                 BackColor = Color.White,
@@ -82,62 +136,130 @@ namespace dotnetMauiUIDesginer
                 AutoIndentChars = true,
                 PaddingBackColor = Color.LightGray
             };
-
             codeEditor.TextChanged += CodeEditor_TextChanged;
 
-            Controls.Add(codeEditor);
-
-            // Disable apply button until a control is selected
-            applyButton.Enabled = false;
+            xamlEditor = new FastColoredTextBox
+            {
+                Dock = DockStyle.Fill,
+                ShowLineNumbers = true,
+                Font = new Font("Consolas", 10)
+            };
+            xamlEditor.TextChanged += xamlEditor_TextChanged;
         }
 
-        // Loads properties of the selected control into the UI
         public void LoadControlProperties(Control? control)
         {
             currentControl = control;
-
-            if (control == null)
-            {
-                nameTextBox.Text = string.Empty;
-                applyButton.Enabled = false;
-            }
-            else
-            {
-                nameTextBox.Text = control.Name ?? string.Empty;
-                applyButton.Enabled = true;
-            }
+            nameTextBox.Text = control?.Name ?? string.Empty;
         }
 
-        // Applies the name change to the currently selected control
-        private void ApplyButton_Click(object? sender, EventArgs e)
+        private void updateXamlLayout(object? sender, EventArgs e) => updateXamlLayout();
+
+        private void updateXamlLayout()
         {
-            if (currentControl != null)
-            {
-                currentControl.Name = nameTextBox.Text;
-                currentControl.Text = nameTextBox.Text;
-                MessageBox.Show($"Control name set to: {currentControl.Name}");
-            }
-            else
-            {
-                MessageBox.Show("No control selected.");
-            }
+            if (codeTabs.SelectedTab?.Text != "XAML Code") return;
+
+            string generatedXaml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                                   genXAMLLayout(_canvasForm.canvasPanel, 0);
+            xamlEditor.Text = generatedXaml;
         }
 
-        // FastColoredTextBox syntax highlighting - only in changed range!
         private void CodeEditor_TextChanged(object? sender, TextChangedEventArgs e)
         {
-            // Clear previous styles only in changed range
             e.ChangedRange.ClearStyle(StyleIndex.All);
-
-            // C# keywords regex (expand as needed)
-            string classKeywords = @"\b(private|public|class)\b";
-            string typeKeywords = @"\b(void|string|int|double|float)";
-            string conditionalKeywords = @"\b(if|else|then|for|foreach|try|except|finally)\b";
-
-            e.ChangedRange.SetStyle(classStyle, classKeywords);
-            e.ChangedRange.SetStyle(typeStyle, typeKeywords);
+            e.ChangedRange.SetStyle(classStyle, @"\b(private|public|class)\b");
+            e.ChangedRange.SetStyle(typeStyle, @"\b(void|string|int|double|float)\b");
             e.ChangedRange.SetStyle(commentStyle, @"//.*$", RegexOptions.Multiline);
         }
 
+        private void xamlEditor_TextChanged(object? sender, TextChangedEventArgs e)
+        {
+            e.ChangedRange.ClearStyle(StyleIndex.All);
+            e.ChangedRange.SetStyle(tagStyle, @"<[/]?[A-Za-z0-9\.:]+", RegexOptions.Singleline);
+            e.ChangedRange.SetStyle(attributeStyle, @"\b[A-Za-z0-9_]+\s*=\s*""[^""]*""");
+            e.ChangedRange.SetStyle(commentXAMLStyle, @"", RegexOptions.Singleline);
+        }
+
+        private string genXAMLLayout(Control ctrl, int indentLvl)
+        {
+            var sb = new StringBuilder();
+            string indent = new string(' ', indentLvl * 4);
+            int x = ctrl.Left;
+            int y = ctrl.Top;
+
+            string typeName = ctrl.GetType().Name;
+            string controlName = ctrl.Name;
+
+            if (string.IsNullOrEmpty(controlName) || _canvasForm.IsControlNameDuplicate(ctrl))
+            {
+                int typeCount = _canvasForm.CountControlsOfType(ctrl.GetType());
+                controlName = $"{typeName}{typeCount + 1}";
+                ctrl.Name = controlName;
+            }
+
+            if (ctrl is Panel)
+            {
+                sb.AppendLine($"{indent}<StackLayout>");
+                foreach (Control child in ctrl.Controls)
+                    sb.Append(genXAMLLayout(child, indentLvl + 1));
+                sb.AppendLine($"{indent}</StackLayout>");
+            }
+            else if (ctrl is Button)
+            {
+                string handlerName = buttonHandlers.ContainsKey((Button)ctrl)
+                    ? buttonHandlers[(Button)ctrl]
+                    : controlName + "_Click";
+
+                sb.AppendLine($"{indent}<Button x:Name=\"{controlName}\" Text=\"{ctrl.Text}\" Margin=\"{x}, {y}, 0, 0\" Clicked=\"{handlerName}\" />");
+            }
+            else if (ctrl is Label)
+            {
+                sb.AppendLine($"{indent}<Label x:Name=\"{controlName}\" Text=\"{ctrl.Text}\" Margin=\"{x}, {y}, 0, 0\" />");
+            }
+
+            return sb.ToString();
+        }
+
+        private void GenerateButtonClickHandler(Control ctrl)
+        {
+            if (ctrl is not Button button) return;
+
+            string handlerName = buttonHandlers.ContainsKey(button)
+                ? buttonHandlers[button]
+                : button.Name + "_Click";
+
+            if (!codeEditor.Text.Contains($"void {handlerName}("))
+            {
+                codeEditor.AppendText($"\nprivate void {handlerName}(object sender, EventArgs e)\n{{\n    // TODO: Add logic for {button.Name}\n}}\n");
+                buttonHandlers[button] = handlerName;
+            }
+        }
+
+        private void UpdateButtonClickHandlerName(Button button, string oldName)
+        {
+            if (!buttonHandlers.TryGetValue(button, out string oldHandlerName))
+            {
+                oldHandlerName = oldName + "_Click";
+            }
+
+            string newHandlerName = button.Name + "_Click";
+
+            if (oldHandlerName == newHandlerName) return;
+
+            // Replace the old handler name in the code editor
+            if (!string.IsNullOrEmpty(oldHandlerName) && codeEditor.Text.Contains(oldHandlerName))
+            {
+                codeEditor.Text = codeEditor.Text.Replace(oldHandlerName, newHandlerName);
+            }
+
+            // Update the mapping
+            buttonHandlers[button] = newHandlerName;
+
+            // If no stub exists, create it
+            if (!codeEditor.Text.Contains($"void {newHandlerName}("))
+            {
+                codeEditor.AppendText($"\nprivate void {newHandlerName}(object sender, EventArgs e)\n{{\n    // TODO: Add logic for {button.Name}\n}}\n");
+            }
+        }
     }
 }

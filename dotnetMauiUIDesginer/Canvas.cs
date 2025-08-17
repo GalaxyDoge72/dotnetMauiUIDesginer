@@ -6,27 +6,33 @@ namespace dotnetMauiUIDesginer
 {
     public partial class Canvas : Form
     {
-        private Panel canvasPanel;
+        private Panel _canvasPanel;
         public event Action<Control>? ControlSelectedForProperties;
+        public event Action? canvasChanged;
 
         private ContextMenuStrip controlContextMenu;
         private Control? contextMenuTargetControl;
+
+        public Panel canvasPanel { get; private set; }
 
         public Canvas()
         {
             InitializeComponent();
 
-            canvasPanel = new Panel
+            _canvasPanel = new Panel
             {
                 Dock = DockStyle.Fill,
                 BackColor = Color.White,
                 AllowDrop = true
             };
-            Controls.Add(canvasPanel);
+
+            this.canvasPanel = _canvasPanel;
+
+            Controls.Add(_canvasPanel);
 
             // Drag & drop events
-            canvasPanel.DragEnter += canvasPanel_DragEnter;
-            canvasPanel.DragDrop += canvasPanel_DragDrop;
+            _canvasPanel.DragEnter += _canvasPanel_DragEnter;
+            _canvasPanel.DragDrop += _canvasPanel_DragDrop;
 
             // Setup context menu
             controlContextMenu = new ContextMenuStrip();
@@ -40,13 +46,13 @@ namespace dotnetMauiUIDesginer
             controlContextMenu.Items.Add(deleteItem);
         }
 
-        private void canvasPanel_DragEnter(object sender, DragEventArgs e)
+        private void _canvasPanel_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(typeof(string)))
                 e.Effect = DragDropEffects.Copy;
         }
 
-        private void canvasPanel_DragDrop(object sender, DragEventArgs e)
+        private void _canvasPanel_DragDrop(object sender, DragEventArgs e)
         {
             string controlType = (string)e.Data.GetData(typeof(string));
             addControlToCanvas(controlType, e.X, e.Y);
@@ -63,7 +69,7 @@ namespace dotnetMauiUIDesginer
 
             if (newControl != null)
             {
-                Point clientPoint = canvasPanel.PointToClient(new Point(screenX, screenY));
+                Point clientPoint = _canvasPanel.PointToClient(new Point(screenX, screenY));
                 newControl.Location = clientPoint;
                 newControl.AutoSize = true;
 
@@ -71,7 +77,8 @@ namespace dotnetMauiUIDesginer
                 AttachSelectionHandler(newControl);
                 AttachContextMenu(newControl);
 
-                canvasPanel.Controls.Add(newControl);
+                _canvasPanel.Controls.Add(newControl);
+                canvasChanged?.Invoke();
             }
         }
 
@@ -98,8 +105,15 @@ namespace dotnetMauiUIDesginer
                 }
             };
 
-            control.MouseUp += (s, e) => dragging = false;
+            control.MouseUp += (s, e) =>
+            {
+                dragging = false;
+
+                // Notify that the canvas changed
+                canvasChanged?.Invoke();
+            };
         }
+
 
         private void AttachSelectionHandler(Control ctrl)
         {
@@ -137,14 +151,44 @@ namespace dotnetMauiUIDesginer
         {
             if (contextMenuTargetControl != null)
             {
-                // Remove from parent (canvasPanel)
-                canvasPanel.Controls.Remove(contextMenuTargetControl);
+                // Remove from parent (_canvasPanel)
+                _canvasPanel.Controls.Remove(contextMenuTargetControl);
+                canvasChanged?.Invoke();
 
                 // Optionally, reset selection so MainWindow knows no control is selected
                 ControlSelectedForProperties?.Invoke(null);
 
+
                 contextMenuTargetControl = null;
             }
+        }
+
+        public int CountControlsOfType(Type type)
+        {
+            int count = 0;
+            foreach (Control c in canvasPanel.Controls)
+                if (c.GetType() == type) count++;
+            return count;
+        }
+
+        public bool IsControlNameDuplicate(Control ctrl)
+        {
+            foreach (Control c in canvasPanel.Controls)
+            {
+                if (c != ctrl && c.Name == ctrl.Name)
+                    return true;
+            }
+            return false;
+        }
+
+        public bool IsControlNameDuplicateWithOther(Control ctrlToIgnore, string name)
+        {
+            foreach (Control c in canvasPanel.Controls)
+            {
+                if (c != ctrlToIgnore && c.Name == name)
+                    return true;
+            }
+            return false;
         }
     }
 }

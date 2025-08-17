@@ -15,14 +15,14 @@ namespace dotnetMauiUIDesginer
             ApplicationConfiguration.Initialize();
 
             var canvas = new Canvas();
-            var mainWindow = new MainWindow();
+            var mainWindow = new MainWindow(canvas);
             var toolbox = new toolboxForm();
 
             int toolboxWidth = 250;
             int toolboxHeight = 200;
 
-            int mainWindowWidth = 500;
-            int mainWindowHeight = 500;
+            int mainWindowWidth = 650;
+            int mainWindowHeight = 650;
 
             canvas.StartPosition = FormStartPosition.Manual;
             canvas.Location = new Point(500, 200);
