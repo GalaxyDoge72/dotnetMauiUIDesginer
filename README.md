@@ -4,3 +4,7 @@ I got sick of having to try to figure out how to work with the .NET MAUI XAML co
 Hopefully this will help a lot of people in writing MAUI apps.
 
 Requires .Net 9.0 runtime (https://dotnet.microsoft.com/en-us/download/dotnet/9.0/runtime)
+
+## Screenshots ##
+
+<img width="1920" height="1038" alt="image" src="https://github.com/user-attachments/assets/66b96462-04d2-40de-b63f-df4f0822613e" />
